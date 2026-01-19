@@ -8,9 +8,11 @@ from discord.ext import commands
 from discord import app_commands
 from utils.economy import (
     create_player, get_player, player_exists, get_net_worth,
-    get_player_stats_summary, claim_daily_bonus, get_leaderboard
+    get_player_stats_summary, claim_daily_bonus, get_leaderboard,
+    get_available_character, mark_character_used
 )
 from data.characters import get_all_characters, get_character
+import random
 
 class AccountCommands(commands.Cog):
     def __init__(self, bot):
@@ -18,7 +20,7 @@ class AccountCommands(commands.Cog):
     
     @app_commands.command(name="setup", description="Create your Game of Wall Street account")
     async def setup(self, interaction: discord.Interaction):
-        """Setup command - creates new player account"""
+        """Setup command - creates new player account with random character"""
         user_id = interaction.user.id
         
         if player_exists(user_id):
@@ -30,28 +32,77 @@ class AccountCommands(commands.Cog):
             await interaction.response.send_message(embed=embed)
             return
         
-        # Show character selection
-        characters = get_all_characters()
+        # Get available character (random assignment, no duplicates)
+        available_char = get_available_character()
         
-        # Create buttons for first few characters
-        view = CharacterSelectView(characters[:5])
+        if not available_char:
+            embed = discord.Embed(
+                title="❌ No Characters Available",
+                description="All 30 characters have been assigned! The game is full.",
+                color=discord.Color.red()
+            )
+            await interaction.response.send_message(embed=embed)
+            return
         
+        # Get character details
+        char = get_character(available_char)
+        
+        # Create player with randomly assigned character
+        player = create_player(
+            user_id,
+            interaction.user.name,
+            available_char,
+            char['starting_cash'],
+            char['starting_bank'],
+            char['stats']
+        )
+        
+        if not player:
+            embed = discord.Embed(
+                title="❌ Account Creation Failed",
+                description="An error occurred while creating your account.",
+                color=discord.Color.red()
+            )
+            await interaction.response.send_message(embed=embed)
+            return
+        
+        # Mark character as used
+        mark_character_used(available_char)
+        
+        # Show confirmation with assigned character
         embed = discord.Embed(
-            title="🎮 Welcome to Game of Wall Street",
-            description="Choose your starting character to begin!\n\nEach character has different stats and starting money.",
+            title="🎮 Welcome to Game of Wall Street!",
+            description=f"Your character has been randomly assigned!",
             color=discord.Color.gold()
         )
         
-        for char_name in characters[:5]:
-            char = get_character(char_name)
-            stats_str = f"Intel:{char['stats']['intellect']}⭐ Humor:{char['stats']['humour']}⭐ Str:{char['stats']['strength']}⭐ Lead:{char['stats']['leadership']}⭐ Health:{char['stats']['mental_health']}⭐ Wealth:{char['stats']['wealth']}⭐"
-            embed.add_field(
-                name=f"{char['bio_emoji']} {char_name} - {char['title']}",
-                value=stats_str,
-                inline=False
-            )
+        stats_str = f"💡 Intellect: {char['stats']['intellect']}⭐\n😄 Humour: {char['stats']['humour']}⭐\n💪 Strength: {char['stats']['strength']}⭐\n👔 Leadership: {char['stats']['leadership']}⭐\n🧠 Mental Health: {char['stats']['mental_health']}⭐\n💰 Wealth: {char['stats']['wealth']}⭐"
         
-        await interaction.response.send_message(embed=embed, view=view)
+        embed.add_field(
+            name=f"{char['bio_emoji']} {available_char}",
+            value=char['title'],
+            inline=False
+        )
+        
+        embed.add_field(
+            name="📊 Your Stats",
+            value=stats_str,
+            inline=False
+        )
+        
+        embed.add_field(
+            name="💰 Starting Money",
+            value=f"Cash: ${char['starting_cash']:,}\nBank: ${char['starting_bank']:,}",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="📖 Background",
+            value=char['background'],
+            inline=False
+        )
+        
+        await interaction.response.send_message(embed=embed)
     
     @app_commands.command(name="profile", description="View your player profile")
     async def profile(self, interaction: discord.Interaction):
@@ -238,21 +289,6 @@ class AccountCommands(commands.Cog):
         )
         
         await interaction.response.send_message(embed=embed)
-
-class CharacterSelectView(discord.ui.View):
-    """View for character selection"""
-    
-    def __init__(self, characters):
-        super().__init__(timeout=60)
-        self.characters = characters
-        self.character_selected = None
-    
-    @discord.ui.button(label="View More", style=discord.ButtonStyle.primary)
-    async def view_more(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-    
-    async def on_timeout(self):
-        pass
 
 # Setup function
 async def setup(bot):

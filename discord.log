@@ -3,3 +3,6 @@
 2026-01-19 22:56:57,783:INFO:discord: ✅ Loaded cogs.casino
 2026-01-19 22:56:57,787:INFO:discord: ✅ Loaded cogs.stocks
 2026-01-19 22:56:57,787:INFO:discord.client: logging in using static token
+2026-01-19 22:56:59,436:INFO:discord.gateway: Shard ID None has connected to Gateway (Session ID: 24986a2d2b8611b56ee74b2989829ef4).
+2026-01-19 22:57:01,450:INFO:discord: ✅ Bot logged in as Game of Wall Street#2759
+2026-01-19 22:57:02,261:INFO:discord: ✅ Synced 18 command(s)

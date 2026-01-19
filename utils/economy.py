@@ -11,6 +11,7 @@ import random
 
 # Database file for persistence (using JSON for simplicity)
 DB_PATH = "data/players.json"
+CHARACTERS_DB_PATH = "data/characters_used.json"
 
 def ensure_db_exists():
     """Create players.json if it doesn't exist"""
@@ -18,6 +19,9 @@ def ensure_db_exists():
     if not os.path.exists(DB_PATH):
         with open(DB_PATH, 'w') as f:
             json.dump({}, f)
+    if not os.path.exists(CHARACTERS_DB_PATH):
+        with open(CHARACTERS_DB_PATH, 'w') as f:
+            json.dump([], f)
 
 def load_db():
     """Load all player data from JSON"""
@@ -299,3 +303,38 @@ def get_player_stats_summary(user_id: int) -> Optional[Dict]:
         "job_streak": player["job_streak"],
         "login_streak": player["login_streak"],
     }
+def load_used_characters():
+    """Load list of used characters"""
+    ensure_db_exists()
+    try:
+        with open(CHARACTERS_DB_PATH, 'r') as f:
+            return json.load(f)
+    except (json.JSONDecodeError, FileNotFoundError):
+        return []
+
+def save_used_characters(characters: List[str]):
+    """Save list of used characters"""
+    ensure_db_exists()
+    with open(CHARACTERS_DB_PATH, 'w') as f:
+        json.dump(characters, f, indent=2)
+
+def get_available_character() -> Optional[str]:
+    """Get a random available character (not yet assigned)"""
+    from data.characters import get_all_characters
+    
+    all_chars = get_all_characters()
+    used_chars = load_used_characters()
+    available_chars = [char for char in all_chars if char not in used_chars]
+    
+    if not available_chars:
+        return None
+    
+    # Return random available character
+    return random.choice(available_chars)
+
+def mark_character_used(character_name: str):
+    """Mark a character as used (assigned to a player)"""
+    used_chars = load_used_characters()
+    if character_name not in used_chars:
+        used_chars.append(character_name)
+        save_used_characters(used_chars)
