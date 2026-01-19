@@ -1,0 +1,5 @@
+2026-01-19 22:56:57,774:INFO:discord: ✅ Loaded cogs.account
+2026-01-19 22:56:57,778:INFO:discord: ✅ Loaded cogs.jobs
+2026-01-19 22:56:57,783:INFO:discord: ✅ Loaded cogs.casino
+2026-01-19 22:56:57,787:INFO:discord: ✅ Loaded cogs.stocks
+2026-01-19 22:56:57,787:INFO:discord.client: logging in using static token
